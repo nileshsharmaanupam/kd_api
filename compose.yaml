@@ -1,0 +1,32 @@
+﻿services:
+  kd_api:
+    image: kd_api
+    build:
+      context: .
+      dockerfile: KD_API/Dockerfile
+    ports:
+      - "8080:8080" # Map host port 8080 to container port 80
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Port=5432;Username=kd_dairy;Password=kd_dairy_1234;Database=kd_db
+    depends_on:
+      - postgres_db
+    networks:
+      - postgres_network
+
+  postgres_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: kd_db
+      POSTGRES_USER: kd_dairy
+      POSTGRES_PASSWORD: kd_dairy_1234
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - postgres_network
+
+volumes:
+  db_data:
+
+networks:
+  postgres_network:
+    driver: bridge
