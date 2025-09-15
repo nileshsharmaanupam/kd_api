@@ -1,0 +1,21 @@
+# This is a generated file. Not intended for manual editing.
+services:
+  kd_api:
+    build:
+      context: "/Users/nilesh.sharma/PersonalProjects/KD_API"
+      dockerfile: "KD_API/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net8.0/KD_API.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "kd_api:dev"
+    ports: []
+    volumes:
+    - "/Users/nilesh.sharma/PersonalProjects/KD_API/KD_API:/app:rw"
+    - "/Users/nilesh.sharma/PersonalProjects/KD_API:/src:rw"
+    - "/Users/nilesh.sharma/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
