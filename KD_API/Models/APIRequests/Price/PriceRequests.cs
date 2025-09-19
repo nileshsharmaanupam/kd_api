@@ -1,0 +1,27 @@
+namespace KD_API.Models.APIRequests.Price;
+
+public class CreatePrice
+{
+    public int? ProductId { get; set; }
+    public int? CattleId { get; set; }
+    public decimal PriceValue { get; set; }
+    public string PriceType { get; set; } // "Market", "Purchase", "Sale"
+    public DateTime EffectiveDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string Currency { get; set; }
+    public string Notes { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class UpdatePrice
+{
+    public int? ProductId { get; set; }
+    public int? CattleId { get; set; }
+    public decimal PriceValue { get; set; }
+    public string PriceType { get; set; } // "Market", "Purchase", "Sale"
+    public DateTime EffectiveDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string Currency { get; set; }
+    public string Notes { get; set; }
+    public bool IsActive { get; set; }
+}
