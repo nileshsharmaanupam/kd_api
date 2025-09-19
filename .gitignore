@@ -1,0 +1,41 @@
+# Ignore build output and IDE files
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+.vscode/
+.idea/
+*.DS_Store
+*.swp
+*.sln.DotSettings*
+# Rider
+.idea/
+*.sln.iml
+# Mac system files
+.DS_Store
+# Docker
+**/Dockerfile
+# Logs
+*.log
+# Test results
+TestResults/
+# Local environment
+.env
+# Publish output
+publish/
+# Rider project model
+.rider/
+# NuGet
+*.nupkg
+*.snupkg
+# Others
+*.db
+*.sqlite
+*.bak
+*.tmp
+# Coverage
+coverage/
+
