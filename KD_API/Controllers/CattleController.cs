@@ -74,12 +74,11 @@ public class CattleController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateCattle([FromBody] CreateCattle request)
+    public async Task<IActionResult> CreateCattle([FromBody] CreateCattle createCattleRequest)
     {
         try
         {
-            var cattle = _mapper.Map<CattleDTO>(request);
-            bool result = await _cattleService.CreateCattle(cattle);
+            bool result = await _cattleService.CreateCattle(createCattleRequest);
             
             if (!result)
             {
@@ -114,18 +113,13 @@ public class CattleController : ControllerBase
     {
         try
         {
-            var cattle = _mapper.Map<CattleDTO>(request);
-            cattle.Id = cattleId;
-            
-            var updatedCattle = await _cattleService.UpdateCattle(cattleId, cattle);
-            var response = _mapper.Map<CattleResponse>(updatedCattle);
-            response.UpdatedAt = DateTime.UtcNow;
+            CattleResponse updatedCattle = await _cattleService.UpdateCattle(cattleId, request);
 
             return Ok(new ApiResponse<CattleResponse>
             {
                 Success = true,
                 Message = "Cattle updated successfully",
-                Data = response
+                Data = updatedCattle
             });
         }
         catch (Exception e)

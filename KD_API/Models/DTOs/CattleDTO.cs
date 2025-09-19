@@ -18,4 +18,6 @@ public class CattleDTO
     public bool IsActive { get; set; }
     public DateTime? LastBreedingDate { get; set; }
     public bool? isLactating { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

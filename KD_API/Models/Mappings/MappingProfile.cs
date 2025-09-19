@@ -1,6 +1,7 @@
 using AutoMapper;
 using KD_API.Models;
 using KD_API.Models.APIRequests.Cattle;
+using KD_API.Models.APIRequests.CreditNote;
 using KD_API.Models.APIResponse.Cattle;
 using KD_API.Models.APIResponse.CreditNote;
 using KD_API.Models.APIResponse.Customer;
@@ -34,6 +35,12 @@ public class MappingProfile : Profile
         CreateMap<UpdateCattle, CattleDTO>()
             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
 
+        // CreditNote request to DTO mappings
+        CreateMap<CreateCreditNote, CreditNoteDTO>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+            
+        CreateMap<UpdateCreditNote, CreditNoteDTO>();
+
         // Customer mappings
         CreateMap<CustomerDTO, CustomerResponse>();
 
@@ -48,6 +55,21 @@ public class MappingProfile : Profile
 
         // CreditNote mappings
         CreateMap<CreditNoteDTO, CreditNoteResponse>();
+
+        CreateMap<IEnumerable<CreditNoteDTO>, CreditNoteListResponse>()
+            .ForMember(dest => dest.CreditNotes, opt => opt.MapFrom(src => src))
+            .ForMember(dest => dest.TotalCount, opt => opt.MapFrom(src => src.Count()))
+            .ForMember(dest => dest.TotalAmount, opt => 
+                opt.MapFrom(src => src.Sum(c => c.TotalAmount)))
+            .ForMember(dest => dest.PaidAmount, opt => 
+                opt.MapFrom(src => src.Where(c => c.Status == Models.Enums.CreditStatus.Paid).Sum(c => c.TotalAmount)))
+            .ForMember(dest => dest.PendingAmount, opt => 
+                opt.MapFrom(src => src.Where(c => c.Status == Models.Enums.CreditStatus.Unpaid || c.Status == Models.Enums.CreditStatus.PartiallyPaid).Sum(c => c.TotalAmount)))
+            .ForMember(dest => dest.StatusCounts, opt => opt.MapFrom(src => 
+                src.GroupBy(c => c.Status.ToString())
+                   .ToDictionary(g => g.Key, g => g.Count())))
+            .ForMember(dest => dest.OverdueCount, opt => opt.MapFrom(src => 
+                src.Count(c => c.DueDate < DateTime.UtcNow && c.Status != Models.Enums.CreditStatus.Paid)));
 
         // Expense mappings
         CreateMap<ExpenseDTO, ExpenseResponse>();

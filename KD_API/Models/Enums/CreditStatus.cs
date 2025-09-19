@@ -4,6 +4,7 @@ public enum CreditStatus
 {
     Created,
     Paid,
-    Overdue,
+    Unpaid,
+    PartiallyPaid,
     Cancelled
 }

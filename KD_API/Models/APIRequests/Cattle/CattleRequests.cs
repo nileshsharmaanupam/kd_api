@@ -27,5 +27,6 @@ public class UpdateCattle
     public DateTime? PurchaseDate { get; set; }
     public decimal? PurchasePrice { get; set; }
     public DateTime? LastBreedingDate { get; set; }
-    public bool? isLactating { get; set; }
+    public bool? IsLactating { get; set; }
+    public bool IsActive { get; set; }
 }

@@ -4,6 +4,7 @@ using KD_API.Models.APIResponse.Cattle;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using KD_API.Models.APIRequests.Cattle;
 
 namespace KD_API.Service.Implementations;
 
@@ -35,10 +36,11 @@ public class CattleService : ICattleService
         return _mapper.Map<CattleListResponse>(cattleList);
     }
 
-    public async Task<bool> CreateCattle(CattleDTO cattleDto)
+    public async Task<bool> CreateCattle(CreateCattle createCattle)
     {
         try
         {
+            CattleDTO cattleDto = _mapper.Map<CattleDTO>(createCattle);
             _context.Cattle.Add(cattleDto);
             await _context.SaveChangesAsync();
             return true;
@@ -49,29 +51,17 @@ public class CattleService : ICattleService
         }
     }
 
-    public async Task<CattleDTO> UpdateCattle(int cattleId, CattleDTO cattleDto)
+    public async Task<CattleResponse> UpdateCattle(int cattleId, UpdateCattle updateCattle)
     {
-        var existingCattle = await _context.Cattle.FindAsync(cattleId);
+        CattleDTO? existingCattle = await _context.Cattle.FindAsync(cattleId);
         if (existingCattle == null)
         {
             throw new ArgumentException($"Cattle with ID {cattleId} not found.");
         }
-
-        existingCattle.Name = cattleDto.Name;
-        existingCattle.Breed = cattleDto.Breed;
-        existingCattle.BirthDate = cattleDto.BirthDate;
-        existingCattle.Weight = cattleDto.Weight;
-        existingCattle.Gender = cattleDto.Gender;
-        existingCattle.Color = cattleDto.Color;
-        existingCattle.HealthStatus = cattleDto.HealthStatus;
-        existingCattle.PurchaseDate = cattleDto.PurchaseDate;
-        existingCattle.PurchasePrice = cattleDto.PurchasePrice;
-        existingCattle.IsActive = cattleDto.IsActive;
-        existingCattle.LastBreedingDate = cattleDto.LastBreedingDate;
-        existingCattle.isLactating = cattleDto.isLactating;
-
+        _mapper.Map(updateCattle, existingCattle);
         await _context.SaveChangesAsync();
-        return existingCattle;
+        CattleResponse response = _mapper.Map<CattleResponse>(existingCattle);
+        return response;
     }
 
     public async Task<bool> DeleteCattle(int cattleId)
@@ -83,7 +73,7 @@ public class CattleService : ICattleService
             {
                 return false;
             }
-
+            
             _context.Cattle.Remove(cattle);
             await _context.SaveChangesAsync();
             return true;

@@ -1,5 +1,7 @@
+using AutoMapper;
 using KD_API.DbContexts;
 using KD_API.Models;
+using KD_API.Models.APIResponse.CreditNote;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,25 +10,35 @@ namespace KD_API.Service.Implementations;
 public class CreditNoteService : ICreditNoteService
 {
     private readonly PostgresDbContext _context;
+    private readonly IMapper _mapper;
 
-    public CreditNoteService(PostgresDbContext context)
+    public CreditNoteService(PostgresDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<CreditNoteDTO> GetCreditNoteById(int creditNoteId)
+    public async Task<CreditNoteResponse> GetCreditNoteById(int creditNoteId)
     {
         var creditNote = await _context.CreditNotes.FindAsync(creditNoteId);
         if (creditNote == null)
         {
             throw new ArgumentException($"CreditNote with ID {creditNoteId} not found.");
         }
-        return creditNote;
+        
+        var customer = await _context.Customers.FindAsync(creditNote.CustomerId);
+        var response = _mapper.Map<CreditNoteResponse>(creditNote);
+        response.CustomerName = customer?.Name ?? "Unknown Customer";
+        response.IsOverdue = creditNote.DueDate < DateTime.Now;
+        response.DaysUntilDue = (creditNote.DueDate - DateTime.Now).Days;
+        
+        return response;
     }
 
-    public async Task<IEnumerable<CreditNoteDTO>> GetAllCreditNotes()
+    public async Task<CreditNoteListResponse> GetAllCreditNotes()
     {
-        return await _context.CreditNotes.ToListAsync();
+        var creditNotes = await _context.CreditNotes.ToListAsync();
+        return _mapper.Map<CreditNoteListResponse>(creditNotes);
     }
 
     public async Task<bool> CreateCreditNote(CreditNoteDTO creditNoteDto)
