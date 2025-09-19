@@ -4,42 +4,35 @@ using KD_API.Models.APIResponse;
 using KD_API.Models.APIResponse.Cattle;
 using KD_API.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
 
 namespace KD_API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class CattleController(ICattleService cattleService) : ControllerBase
+public class CattleController : ControllerBase
 {
+    private readonly ICattleService _cattleService;
+    private readonly IMapper _mapper;
+
+    public CattleController(ICattleService cattleService, IMapper mapper)
+    {
+        _cattleService = cattleService;
+        _mapper = mapper;
+    }
+
     [HttpGet("{cattleId}")]
     public async Task<IActionResult> GetCattleById(int cattleId)
     {
         try
         {
-            var cattle = await cattleService.GetCattleById(cattleId);
-            var response = new CattleResponse
-            {
-                Id = cattle.Id,
-                Name = cattle.Name,
-                Breed = cattle.Breed,
-                BirthDate = cattle.BirthDate,
-                Weight = cattle.Weight,
-                Gender = cattle.Gender,
-                Color = cattle.Color,
-                HealthStatus = cattle.HealthStatus,
-                PurchaseDate = cattle.PurchaseDate,
-                PurchasePrice = cattle.PurchasePrice,
-                IsActive = cattle.IsActive,
-                LastBreedingDate = cattle.LastBreedingDate,
-                isLactating = cattle.isLactating,
-                CreatedAt = DateTime.UtcNow
-            };
-
+            var cattleResponse = await _cattleService.GetCattleById(cattleId);
+            
             return Ok(new ApiResponse<CattleResponse>
             {
                 Success = true,
                 Message = "Cattle retrieved successfully",
-                Data = response
+                Data = cattleResponse
             });
         }
         catch (Exception e)
@@ -49,7 +42,7 @@ public class CattleController(ICattleService cattleService) : ControllerBase
             {
                 Success = false,
                 Message = "Failed to retrieve cattle",
-                Errors = new List<string> { e.Message }
+                Data = null
             });
         }
     }
@@ -59,38 +52,13 @@ public class CattleController(ICattleService cattleService) : ControllerBase
     {
         try
         {
-            var cattleList = await cattleService.GetAllCattle();
-            var cattleResponses = cattleList.Select(c => new CattleResponse
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Breed = c.Breed,
-                BirthDate = c.BirthDate,
-                Weight = c.Weight,
-                Gender = c.Gender,
-                Color = c.Color,
-                HealthStatus = c.HealthStatus,
-                PurchaseDate = c.PurchaseDate,
-                PurchasePrice = c.PurchasePrice,
-                IsActive = c.IsActive,
-                LastBreedingDate = c.LastBreedingDate,
-                isLactating = c.isLactating,
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
-
-            var listResponse = new CattleListResponse
-            {
-                Cattle = cattleResponses,
-                TotalCount = cattleResponses.Count,
-                ActiveCount = cattleResponses.Count(c => c.IsActive),
-                InactiveCount = cattleResponses.Count(c => !c.IsActive)
-            };
-
+            var cattleListResponse = await _cattleService.GetAllCattle();
+            
             return Ok(new ApiResponse<CattleListResponse>
             {
                 Success = true,
-                Message = "Cattle retrieved successfully",
-                Data = listResponse
+                Message = "All cattle retrieved successfully",
+                Data = cattleListResponse
             });
         }
         catch (Exception e)
@@ -99,8 +67,8 @@ public class CattleController(ICattleService cattleService) : ControllerBase
             return StatusCode(500, new ApiResponse<CattleListResponse>
             {
                 Success = false,
-                Message = "Failed to retrieve cattle",
-                Errors = new List<string> { e.Message }
+                Message = "Failed to retrieve cattle list",
+                Data = null
             });
         }
     }
@@ -110,23 +78,9 @@ public class CattleController(ICattleService cattleService) : ControllerBase
     {
         try
         {
-            var cattle = new Cattle
-            {
-                Name = request.Name,
-                Breed = request.Breed,
-                BirthDate = request.BirthDate,
-                Weight = request.Weight,
-                Gender = request.Gender,
-                Color = request.Color,
-                HealthStatus = request.HealthStatus,
-                PurchaseDate = request.PurchaseDate,
-                PurchasePrice = request.PurchasePrice,
-                LastBreedingDate = request.LastBreedingDate,
-                isLactating = request.isLactating,
-                IsActive = true
-            };
-
-            bool result = await cattleService.CreateCattle(cattle);
+            var cattle = _mapper.Map<CattleDTO>(request);
+            bool result = await _cattleService.CreateCattle(cattle);
+            
             if (!result)
             {
                 return BadRequest(new ApiResponse<object>
@@ -160,42 +114,12 @@ public class CattleController(ICattleService cattleService) : ControllerBase
     {
         try
         {
-            var cattle = new Cattle
-            {
-                Id = cattleId,
-                Name = request.Name,
-                Breed = request.Breed,
-                BirthDate = request.BirthDate,
-                Weight = request.Weight,
-                Gender = request.Gender,
-                Color = request.Color,
-                HealthStatus = request.HealthStatus,
-                PurchaseDate = request.PurchaseDate,
-                PurchasePrice = request.PurchasePrice,
-                LastBreedingDate = request.LastBreedingDate,
-                isLactating = request.isLactating,
-                IsActive = true
-            };
-
-            var updatedCattle = await cattleService.UpdateCattle(cattleId, cattle);
-            var response = new CattleResponse
-            {
-                Id = updatedCattle.Id,
-                Name = updatedCattle.Name,
-                Breed = updatedCattle.Breed,
-                BirthDate = updatedCattle.BirthDate,
-                Weight = updatedCattle.Weight,
-                Gender = updatedCattle.Gender,
-                Color = updatedCattle.Color,
-                HealthStatus = updatedCattle.HealthStatus,
-                PurchaseDate = updatedCattle.PurchaseDate,
-                PurchasePrice = updatedCattle.PurchasePrice,
-                IsActive = updatedCattle.IsActive,
-                LastBreedingDate = updatedCattle.LastBreedingDate,
-                isLactating = updatedCattle.isLactating,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var cattle = _mapper.Map<CattleDTO>(request);
+            cattle.Id = cattleId;
+            
+            var updatedCattle = await _cattleService.UpdateCattle(cattleId, cattle);
+            var response = _mapper.Map<CattleResponse>(updatedCattle);
+            response.UpdatedAt = DateTime.UtcNow;
 
             return Ok(new ApiResponse<CattleResponse>
             {
@@ -221,7 +145,7 @@ public class CattleController(ICattleService cattleService) : ControllerBase
     {
         try
         {
-            bool result = await cattleService.DeleteCattle(cattleId);
+            bool result = await _cattleService.DeleteCattle(cattleId);
             if (!result)
             {
                 return NotFound(new ApiResponse<object>
