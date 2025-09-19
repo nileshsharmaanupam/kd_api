@@ -1,10 +1,8 @@
-using KD_API.Models;
 using KD_API.Models.APIRequests.Cattle;
 using KD_API.Models.APIResponse;
 using KD_API.Models.APIResponse.Cattle;
 using KD_API.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 
 namespace KD_API.Controllers;
 
@@ -13,12 +11,10 @@ namespace KD_API.Controllers;
 public class CattleController : ControllerBase
 {
     private readonly ICattleService _cattleService;
-    private readonly IMapper _mapper;
 
-    public CattleController(ICattleService cattleService, IMapper mapper)
+    public CattleController(ICattleService cattleService)
     {
         _cattleService = cattleService;
-        _mapper = mapper;
     }
 
     [HttpGet("{cattleId}")]
@@ -26,23 +22,23 @@ public class CattleController : ControllerBase
     {
         try
         {
-            var cattleResponse = await _cattleService.GetCattleById(cattleId);
+            var request = new GetCattleByIdRequest { CattleId = cattleId };
+            var response = await _cattleService.GetCattleById(request);
             
             return Ok(new ApiResponse<CattleResponse>
             {
                 Success = true,
                 Message = "Cattle retrieved successfully",
-                Data = cattleResponse
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<CattleResponse>
             {
                 Success = false,
                 Message = "Failed to retrieve cattle",
-                Data = null
+                Errors = new List<string> { e.Message }
             });
         }
     }
@@ -52,54 +48,44 @@ public class CattleController : ControllerBase
     {
         try
         {
-            var cattleListResponse = await _cattleService.GetAllCattle();
+            var request = new GetAllCattleRequest();
+            var response = await _cattleService.GetAllCattle(request);
             
             return Ok(new ApiResponse<CattleListResponse>
             {
                 Success = true,
-                Message = "All cattle retrieved successfully",
-                Data = cattleListResponse
+                Message = "Cattle retrieved successfully",
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<CattleListResponse>
             {
                 Success = false,
-                Message = "Failed to retrieve cattle list",
-                Data = null
+                Message = "Failed to retrieve cattle",
+                Errors = new List<string> { e.Message }
             });
         }
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateCattle([FromBody] CreateCattle createCattleRequest)
+    public async Task<IActionResult> CreateCattle([FromBody] CreateCattleRequest request)
     {
         try
         {
-            bool result = await _cattleService.CreateCattle(createCattleRequest);
+            var response = await _cattleService.CreateCattle(request);
             
-            if (!result)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Failed to create cattle",
-                    Errors = new List<string> { "Cattle creation failed" }
-                });
-            }
-
-            return Ok(new ApiResponse<object>
+            return Ok(new ApiResponse<CattleResponse>
             {
                 Success = true,
-                Message = "Cattle created successfully"
+                Message = "Cattle created successfully",
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            return StatusCode(500, new ApiResponse<object>
+            return StatusCode(500, new ApiResponse<CattleResponse>
             {
                 Success = false,
                 Message = "Failed to create cattle",
@@ -109,22 +95,22 @@ public class CattleController : ControllerBase
     }
 
     [HttpPut("{cattleId}")]
-    public async Task<IActionResult> UpdateCattle(int cattleId, [FromBody] UpdateCattle request)
+    public async Task<IActionResult> UpdateCattle(int cattleId, [FromBody] UpdateCattleRequest request)
     {
         try
         {
-            CattleResponse updatedCattle = await _cattleService.UpdateCattle(cattleId, request);
+            request.CattleId = cattleId;
+            var response = await _cattleService.UpdateCattle(request);
 
             return Ok(new ApiResponse<CattleResponse>
             {
                 Success = true,
                 Message = "Cattle updated successfully",
-                Data = updatedCattle
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<CattleResponse>
             {
                 Success = false,
@@ -139,26 +125,26 @@ public class CattleController : ControllerBase
     {
         try
         {
-            bool result = await _cattleService.DeleteCattle(cattleId);
-            if (!result)
+            var request = new DeleteCattleRequest { CattleId = cattleId };
+            var response = await _cattleService.DeleteCattle(request);
+            
+            if (!response.Success)
             {
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Cattle not found or failed to delete",
-                    Errors = new List<string> { "Cattle deletion failed" }
+                    Message = response.Message
                 });
             }
 
             return Ok(new ApiResponse<object>
             {
                 Success = true,
-                Message = "Cattle deleted successfully"
+                Message = response.Message
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<object>
             {
                 Success = false,

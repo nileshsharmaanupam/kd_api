@@ -1,5 +1,8 @@
+using AutoMapper;
 using KD_API.DbContexts;
 using KD_API.Models;
+using KD_API.Models.APIRequests.Transaction;
+using KD_API.Models.APIResponse.Transaction;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,79 +11,87 @@ namespace KD_API.Service.Implementations;
 public class TransactionService : ITransactionService
 {
     private readonly PostgresDbContext _context;
+    private readonly IMapper _mapper;
 
-    public TransactionService(PostgresDbContext context)
+    public TransactionService(PostgresDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<TransactionDTO> GetTransactionById(int transactionId)
+    public async Task<TransactionResponse> GetTransactionById(GetTransactionByIdRequest request)
     {
-        var transaction = await _context.Transactions.FindAsync(transactionId);
+        var transaction = await _context.Transactions.FindAsync(request.TransactionId);
         if (transaction == null)
         {
-            throw new ArgumentException($"Transaction with ID {transactionId} not found.");
+            throw new ArgumentException($"Transaction with ID {request.TransactionId} not found.");
         }
-        return transaction;
+        
+        var response = _mapper.Map<TransactionResponse>(transaction);
+        return response;
     }
 
-    public async Task<IEnumerable<TransactionDTO>> GetAllTransactions()
+    public async Task<TransactionListResponse> GetAllTransactions(GetAllTransactionsRequest request)
     {
-        return await _context.Transactions.ToListAsync();
+        var transactions = await _context.Transactions.ToListAsync();
+        return _mapper.Map<TransactionListResponse>(transactions);
     }
 
-    public async Task<bool> CreateTransaction(TransactionDTO transactionDto)
+    public async Task<TransactionResponse> CreateTransaction(CreateTransactionRequest request)
     {
-        try
-        {
-            _context.Transactions.Add(transactionDto);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var transaction = _mapper.Map<TransactionDTO>(request);
+        _context.Transactions.Add(transaction);
+        await _context.SaveChangesAsync();
+        
+        var response = _mapper.Map<TransactionResponse>(transaction);
+        return response;
     }
 
-    public async Task<TransactionDTO> UpdateTransaction(int transactionId, TransactionDTO transactionDto)
+    public async Task<TransactionResponse> UpdateTransaction(UpdateTransactionRequest request)
     {
-        var existingTransaction = await _context.Transactions.FindAsync(transactionId);
+        var existingTransaction = await _context.Transactions.FindAsync(request.TransactionId);
         if (existingTransaction == null)
         {
-            throw new ArgumentException($"Transaction with ID {transactionId} not found.");
+            throw new ArgumentException($"Transaction with ID {request.TransactionId} not found.");
         }
-
-        existingTransaction.CustomerId = transactionDto.CustomerId;
-        existingTransaction.CattleId = transactionDto.CattleId;
-        existingTransaction.ProductId = transactionDto.ProductId;
-        existingTransaction.Price = transactionDto.Price;
-        existingTransaction.Amount = transactionDto.Amount;
-        existingTransaction.Quantity = transactionDto.Quantity;
-        existingTransaction.TransactionDate = transactionDto.TransactionDate;
-        existingTransaction.Status = transactionDto.Status;
-
+        
+        _mapper.Map(request, existingTransaction);
         await _context.SaveChangesAsync();
-        return existingTransaction;
+        
+        var response = _mapper.Map<TransactionResponse>(existingTransaction);
+        return response;
     }
 
-    public async Task<bool> DeleteTransaction(int transactionId)
+    public async Task<DeleteTransactionResponse> DeleteTransaction(DeleteTransactionRequest request)
     {
         try
         {
-            var transaction = await _context.Transactions.FindAsync(transactionId);
+            var transaction = await _context.Transactions.FindAsync(request.TransactionId);
             if (transaction == null)
             {
-                return false;
+                return new DeleteTransactionResponse 
+                { 
+                    Success = false, 
+                    Message = $"Transaction with ID {request.TransactionId} not found." 
+                };
             }
 
             _context.Transactions.Remove(transaction);
             await _context.SaveChangesAsync();
-            return true;
+            
+            return new DeleteTransactionResponse 
+            { 
+                Success = true, 
+                Message = "Transaction deleted successfully." 
+            };
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return new DeleteTransactionResponse 
+            { 
+                Success = false, 
+                Message = $"Error deleting Transaction: {ex.Message}" 
+            };
         }
     }
 }

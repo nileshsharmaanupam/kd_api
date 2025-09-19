@@ -12,7 +12,7 @@ public class PostgresDbContext : DbContext
     public DbSet<CattleDTO> Cattle { get; set; }
     public DbSet<CustomerDTO> Customers { get; set; }
     public DbSet<ExpenseDTO> Expenses { get; set; }
-    //public DbSet<Price> Prices { get; set; }  Not Going to use for MVP app 
+    public DbSet<PriceDTO> Prices { get; set; }
     public DbSet<ProductDTO> Products { get; set; }
     public DbSet<TransactionDTO> Transactions { get; set; }
     public DbSet<ExpenseTagDTO> ExpenseTags { get; set; }

@@ -1,87 +1,98 @@
+using AutoMapper;
 using KD_API.DbContexts;
 using KD_API.Models;
+using KD_API.Models.APIRequests.Price;
+using KD_API.Models.APIResponse.Price;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace KD_API.Service.Implementations;
 
+[Obsolete("PriceService is new and not included in MVP")]
 public class PriceService : IPriceService
 {
     private readonly PostgresDbContext _context;
+    private readonly IMapper _mapper;
 
-    public PriceService(PostgresDbContext context)
+    public PriceService(PostgresDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<PriceDTO> GetPriceById(int priceId)
+    public async Task<PriceResponse> GetPriceById(GetPriceByIdRequest request)
     {
-        var price = await _context.Set<PriceDTO>().FindAsync(priceId);
+        var price = await _context.Prices.FindAsync(request.PriceId);
         if (price == null)
         {
-            throw new ArgumentException($"Price with ID {priceId} not found.");
+            throw new ArgumentException($"Price with ID {request.PriceId} not found.");
         }
-        return price;
+        
+        var response = _mapper.Map<PriceResponse>(price);
+        return response;
     }
 
-    public async Task<IEnumerable<PriceDTO>> GetAllPrices()
+    public async Task<PriceListResponse> GetAllPrices(GetAllPricesRequest request)
     {
-        return await _context.Set<PriceDTO>().ToListAsync();
+        var prices = await _context.Prices.ToListAsync();
+        return _mapper.Map<PriceListResponse>(prices);
     }
 
-    public async Task<bool> CreatePrice(PriceDTO priceDto)
+    public async Task<PriceResponse> CreatePrice(CreatePriceRequest request)
     {
-        try
-        {
-            _context.Set<PriceDTO>().Add(priceDto);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var price = _mapper.Map<PriceDTO>(request);
+        _context.Prices.Add(price);
+        await _context.SaveChangesAsync();
+        
+        var response = _mapper.Map<PriceResponse>(price);
+        return response;
     }
 
-    public async Task<PriceDTO> UpdatePrice(int priceId, PriceDTO priceDto)
+    public async Task<PriceResponse> UpdatePrice(UpdatePriceRequest request)
     {
-        var existingPrice = await _context.Set<PriceDTO>().FindAsync(priceId);
+        var existingPrice = await _context.Prices.FindAsync(request.PriceId);
         if (existingPrice == null)
         {
-            throw new ArgumentException($"Price with ID {priceId} not found.");
+            throw new ArgumentException($"Price with ID {request.PriceId} not found.");
         }
-
-        existingPrice.ProductId = priceDto.ProductId;
-        existingPrice.CattleId = priceDto.CattleId;
-        existingPrice.PriceValue = priceDto.PriceValue;
-        existingPrice.PriceType = priceDto.PriceType;
-        existingPrice.EffectiveDate = priceDto.EffectiveDate;
-        existingPrice.ExpiryDate = priceDto.ExpiryDate;
-        existingPrice.Currency = priceDto.Currency;
-        existingPrice.Notes = priceDto.Notes;
-        existingPrice.IsActive = priceDto.IsActive;
-
+        
+        _mapper.Map(request, existingPrice);
         await _context.SaveChangesAsync();
-        return existingPrice;
+        
+        var response = _mapper.Map<PriceResponse>(existingPrice);
+        return response;
     }
 
-    public async Task<bool> DeletePrice(int priceId)
+    public async Task<DeletePriceResponse> DeletePrice(DeletePriceRequest request)
     {
         try
         {
-            var price = await _context.Set<PriceDTO>().FindAsync(priceId);
+            var price = await _context.Prices.FindAsync(request.PriceId);
             if (price == null)
             {
-                return false;
+                return new DeletePriceResponse 
+                { 
+                    Success = false, 
+                    Message = $"Price with ID {request.PriceId} not found." 
+                };
             }
 
-            _context.Set<PriceDTO>().Remove(price);
+            _context.Prices.Remove(price);
             await _context.SaveChangesAsync();
-            return true;
+            
+            return new DeletePriceResponse 
+            { 
+                Success = true, 
+                Message = "Price deleted successfully." 
+            };
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return new DeletePriceResponse 
+            { 
+                Success = false, 
+                Message = $"Error deleting Price: {ex.Message}" 
+            };
         }
     }
 }

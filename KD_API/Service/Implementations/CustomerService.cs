@@ -1,5 +1,8 @@
+using AutoMapper;
 using KD_API.DbContexts;
 using KD_API.Models;
+using KD_API.Models.APIRequests.Customer;
+using KD_API.Models.APIResponse.Customer;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,78 +11,87 @@ namespace KD_API.Service.Implementations;
 public class CustomerService : ICustomerService
 {
     private readonly PostgresDbContext _context;
+    private readonly IMapper _mapper;
 
-    public CustomerService(PostgresDbContext context)
+    public CustomerService(PostgresDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<CustomerDTO> GetCustomerById(int customerId)
+    public async Task<CustomerResponse> GetCustomerById(GetCustomerByIdRequest request)
     {
-        var customer = await _context.Customers.FindAsync(customerId);
+        var customer = await _context.Customers.FindAsync(request.CustomerId);
         if (customer == null)
         {
-            throw new ArgumentException($"Customer with ID {customerId} not found.");
+            throw new ArgumentException($"Customer with ID {request.CustomerId} not found.");
         }
-        return customer;
+        
+        var response = _mapper.Map<CustomerResponse>(customer);
+        return response;
     }
 
-    public async Task<IEnumerable<CustomerDTO>> GetAllCustomers()
+    public async Task<CustomerListResponse> GetAllCustomers(GetAllCustomersRequest request)
     {
-        return await _context.Customers.ToListAsync();
+        var customers = await _context.Customers.ToListAsync();
+        return _mapper.Map<CustomerListResponse>(customers);
     }
 
-    public async Task<bool> CreateCustomer(CustomerDTO customerDto)
+    public async Task<CustomerResponse> CreateCustomer(CreateCustomerRequest request)
     {
-        try
-        {
-            _context.Customers.Add(customerDto);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var customer = _mapper.Map<CustomerDTO>(request);
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+        
+        var response = _mapper.Map<CustomerResponse>(customer);
+        return response;
     }
 
-    public async Task<CustomerDTO> UpdateCustomer(int customerId, CustomerDTO customerDto)
+    public async Task<CustomerResponse> UpdateCustomer(UpdateCustomerRequest request)
     {
-        var existingCustomer = await _context.Customers.FindAsync(customerId);
+        var existingCustomer = await _context.Customers.FindAsync(request.CustomerId);
         if (existingCustomer == null)
         {
-            throw new ArgumentException($"Customer with ID {customerId} not found.");
+            throw new ArgumentException($"Customer with ID {request.CustomerId} not found.");
         }
-
-        existingCustomer.Name = customerDto.Name;
-        existingCustomer.Email = customerDto.Email;
-        existingCustomer.Phone = customerDto.Phone;
-        existingCustomer.Address = customerDto.Address;
-        existingCustomer.Discription = customerDto.Discription;
-        existingCustomer.JoinDate = customerDto.JoinDate;
-        existingCustomer.IsActive = customerDto.IsActive;
-
+        
+        _mapper.Map(request, existingCustomer);
         await _context.SaveChangesAsync();
-        return existingCustomer;
+        
+        var response = _mapper.Map<CustomerResponse>(existingCustomer);
+        return response;
     }
 
-    public async Task<bool> DeleteCustomer(int customerId)
+    public async Task<DeleteCustomerResponse> DeleteCustomer(DeleteCustomerRequest request)
     {
         try
         {
-            var customer = await _context.Customers.FindAsync(customerId);
+            var customer = await _context.Customers.FindAsync(request.CustomerId);
             if (customer == null)
             {
-                return false;
+                return new DeleteCustomerResponse 
+                { 
+                    Success = false, 
+                    Message = $"Customer with ID {request.CustomerId} not found." 
+                };
             }
 
             _context.Customers.Remove(customer);
             await _context.SaveChangesAsync();
-            return true;
+            
+            return new DeleteCustomerResponse 
+            { 
+                Success = true, 
+                Message = "Customer deleted successfully." 
+            };
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return new DeleteCustomerResponse 
+            { 
+                Success = false, 
+                Message = $"Error deleting Customer: {ex.Message}" 
+            };
         }
     }
 }

@@ -26,3 +26,9 @@ public class CattleListResponse
     public int ActiveCount { get; set; }
     public int InactiveCount { get; set; }
 }
+
+public class DeleteCattleResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+}

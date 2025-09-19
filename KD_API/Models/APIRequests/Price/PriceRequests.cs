@@ -1,6 +1,16 @@
 namespace KD_API.Models.APIRequests.Price;
 
-public class CreatePrice
+public class GetPriceByIdRequest
+{
+    public int PriceId { get; set; }
+}
+
+public class GetAllPricesRequest
+{
+    // Can add filtering/pagination parameters if needed
+}
+
+public class CreatePriceRequest
 {
     public int? ProductId { get; set; }
     public int? CattleId { get; set; }
@@ -13,8 +23,9 @@ public class CreatePrice
     public bool IsActive { get; set; }
 }
 
-public class UpdatePrice
+public class UpdatePriceRequest
 {
+    public int PriceId { get; set; }
     public int? ProductId { get; set; }
     public int? CattleId { get; set; }
     public decimal PriceValue { get; set; }
@@ -25,3 +36,12 @@ public class UpdatePrice
     public string Notes { get; set; }
     public bool IsActive { get; set; }
 }
+
+public class DeletePriceRequest
+{
+    public int PriceId { get; set; }
+}
+
+// Legacy classes for backward compatibility
+public class CreatePrice : CreatePriceRequest { }
+public class UpdatePrice : UpdatePriceRequest { }

@@ -1,6 +1,7 @@
 using AutoMapper;
 using KD_API.DbContexts;
 using KD_API.Models;
+using KD_API.Models.APIRequests.CreditNote;
 using KD_API.Models.APIResponse.CreditNote;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -18,12 +19,12 @@ public class CreditNoteService : ICreditNoteService
         _mapper = mapper;
     }
 
-    public async Task<CreditNoteResponse> GetCreditNoteById(int creditNoteId)
+    public async Task<CreditNoteResponse> GetCreditNoteById(GetCreditNoteByIdRequest request)
     {
-        var creditNote = await _context.CreditNotes.FindAsync(creditNoteId);
+        var creditNote = await _context.CreditNotes.FindAsync(request.CreditNoteId);
         if (creditNote == null)
         {
-            throw new ArgumentException($"CreditNote with ID {creditNoteId} not found.");
+            throw new ArgumentException($"CreditNote with ID {request.CreditNoteId} not found.");
         }
         
         var customer = await _context.Customers.FindAsync(creditNote.CustomerId);
@@ -35,64 +36,67 @@ public class CreditNoteService : ICreditNoteService
         return response;
     }
 
-    public async Task<CreditNoteListResponse> GetAllCreditNotes()
+    public async Task<CreditNoteListResponse> GetAllCreditNotes(GetAllCreditNotesRequest request)
     {
         var creditNotes = await _context.CreditNotes.ToListAsync();
         return _mapper.Map<CreditNoteListResponse>(creditNotes);
     }
 
-    public async Task<bool> CreateCreditNote(CreditNoteDTO creditNoteDto)
+    public async Task<CreditNoteResponse> CreateCreditNote(CreateCreditNoteRequest request)
     {
-        try
-        {
-            _context.CreditNotes.Add(creditNoteDto);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var creditNote = _mapper.Map<CreditNoteDTO>(request);
+        _context.CreditNotes.Add(creditNote);
+        await _context.SaveChangesAsync();
+        
+        var response = _mapper.Map<CreditNoteResponse>(creditNote);
+        return response;
     }
 
-    public async Task<CreditNoteDTO> UpdateCreditNote(int creditNoteId, CreditNoteDTO creditNoteDto)
+    public async Task<CreditNoteResponse> UpdateCreditNote(UpdateCreditNoteRequest request)
     {
-        var existingCreditNote = await _context.CreditNotes.FindAsync(creditNoteId);
+        var existingCreditNote = await _context.CreditNotes.FindAsync(request.CreditNoteId);
         if (existingCreditNote == null)
         {
-            throw new ArgumentException($"CreditNote with ID {creditNoteId} not found.");
+            throw new ArgumentException($"CreditNote with ID {request.CreditNoteId} not found.");
         }
-
-        existingCreditNote.CustomerId = creditNoteDto.CustomerId;
-        existingCreditNote.CreditDate = creditNoteDto.CreditDate;
-        existingCreditNote.DueDate = creditNoteDto.DueDate;
-        existingCreditNote.SubTotal = creditNoteDto.SubTotal;
-        existingCreditNote.TaxAmount = creditNoteDto.TaxAmount;
-        existingCreditNote.TotalAmount = creditNoteDto.TotalAmount;
-        existingCreditNote.Status = creditNoteDto.Status;
-        existingCreditNote.Notes = creditNoteDto.Notes;
-
+        
+        _mapper.Map(request, existingCreditNote);
         await _context.SaveChangesAsync();
-        return existingCreditNote;
+        
+        var response = _mapper.Map<CreditNoteResponse>(existingCreditNote);
+        return response;
     }
 
-    public async Task<bool> DeleteCreditNote(int creditNoteId)
+    public async Task<DeleteCreditNoteResponse> DeleteCreditNote(DeleteCreditNoteRequest request)
     {
         try
         {
-            var creditNote = await _context.CreditNotes.FindAsync(creditNoteId);
+            var creditNote = await _context.CreditNotes.FindAsync(request.CreditNoteId);
             if (creditNote == null)
             {
-                return false;
+                return new DeleteCreditNoteResponse 
+                { 
+                    Success = false, 
+                    Message = $"CreditNote with ID {request.CreditNoteId} not found." 
+                };
             }
 
             _context.CreditNotes.Remove(creditNote);
             await _context.SaveChangesAsync();
-            return true;
+            
+            return new DeleteCreditNoteResponse 
+            { 
+                Success = true, 
+                Message = "CreditNote deleted successfully." 
+            };
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return new DeleteCreditNoteResponse 
+            { 
+                Success = false, 
+                Message = $"Error deleting CreditNote: {ex.Message}" 
+            };
         }
     }
 }

@@ -1,4 +1,3 @@
-using KD_API.Models;
 using KD_API.Models.APIRequests.Product;
 using KD_API.Models.APIResponse;
 using KD_API.Models.APIResponse.Product;
@@ -9,27 +8,23 @@ namespace KD_API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProductController(IProductService productService) : ControllerBase
+public class ProductController : ControllerBase
 {
+    private readonly IProductService _productService;
+
+    public ProductController(IProductService productService)
+    {
+        _productService = productService;
+    }
+
     [HttpGet("{productId}")]
     public async Task<IActionResult> GetProductById(int productId)
     {
         try
         {
-            var product = await productService.GetProductById(productId);
-            var response = new ProductResponse
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                CreatedDate = product.CreatedDate,
-                IsActive = product.IsActive,
-                CreatedAt = DateTime.UtcNow,
-                TotalSales = 0,
-                TotalRevenue = 0
-            };
-
+            var request = new GetProductByIdRequest { ProductId = productId };
+            var response = await _productService.GetProductById(request);
+            
             return Ok(new ApiResponse<ProductResponse>
             {
                 Success = true,
@@ -39,7 +34,6 @@ public class ProductController(IProductService productService) : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<ProductResponse>
             {
                 Success = false,
@@ -54,39 +48,18 @@ public class ProductController(IProductService productService) : ControllerBase
     {
         try
         {
-            var products = await productService.GetAllProducts();
-            var productResponses = products.Select(p => new ProductResponse
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                CreatedDate = p.CreatedDate,
-                IsActive = p.IsActive,
-                CreatedAt = DateTime.UtcNow,
-                TotalSales = 0,
-                TotalRevenue = 0
-            }).ToList();
-
-            var listResponse = new ProductListResponse
-            {
-                Products = productResponses,
-                TotalCount = productResponses.Count,
-                ActiveCount = productResponses.Count(p => p.IsActive),
-                InactiveCount = productResponses.Count(p => !p.IsActive),
-                AveragePrice = productResponses.Any() ? productResponses.Average(p => p.Price) : 0
-            };
-
+            var request = new GetAllProductsRequest();
+            var response = await _productService.GetAllProducts(request);
+            
             return Ok(new ApiResponse<ProductListResponse>
             {
                 Success = true,
                 Message = "Products retrieved successfully",
-                Data = listResponse
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<ProductListResponse>
             {
                 Success = false,
@@ -97,40 +70,22 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProduct([FromBody] CreateProduct request)
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
     {
         try
         {
-            var product = new Product
-            {
-                Name = request.Name,
-                Description = request.Description,
-                Price = request.Price,
-                CreatedDate = request.CreatedDate,
-                IsActive = request.IsActive
-            };
-
-            bool result = await productService.CreateProduct(product);
-            if (!result)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Failed to create product",
-                    Errors = new List<string> { "Product creation failed" }
-                });
-            }
-
-            return Ok(new ApiResponse<object>
+            var response = await _productService.CreateProduct(request);
+            
+            return Ok(new ApiResponse<ProductResponse>
             {
                 Success = true,
-                Message = "Product created successfully"
+                Message = "Product created successfully",
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            return StatusCode(500, new ApiResponse<object>
+            return StatusCode(500, new ApiResponse<ProductResponse>
             {
                 Success = false,
                 Message = "Failed to create product",
@@ -140,34 +95,12 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     [HttpPut("{productId}")]
-    public async Task<IActionResult> UpdateProduct(int productId, [FromBody] UpdateProduct request)
+    public async Task<IActionResult> UpdateProduct(int productId, [FromBody] UpdateProductRequest request)
     {
         try
         {
-            var product = new Product
-            {
-                Id = productId,
-                Name = request.Name,
-                Description = request.Description,
-                Price = request.Price,
-                CreatedDate = request.CreatedDate,
-                IsActive = request.IsActive
-            };
-
-            var updatedProduct = await productService.UpdateProduct(productId, product);
-            var response = new ProductResponse
-            {
-                Id = updatedProduct.Id,
-                Name = updatedProduct.Name,
-                Description = updatedProduct.Description,
-                Price = updatedProduct.Price,
-                CreatedDate = updatedProduct.CreatedDate,
-                IsActive = updatedProduct.IsActive,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                TotalSales = 0,
-                TotalRevenue = 0
-            };
+            request.ProductId = productId;
+            var response = await _productService.UpdateProduct(request);
 
             return Ok(new ApiResponse<ProductResponse>
             {
@@ -178,7 +111,6 @@ public class ProductController(IProductService productService) : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<ProductResponse>
             {
                 Success = false,
@@ -193,26 +125,26 @@ public class ProductController(IProductService productService) : ControllerBase
     {
         try
         {
-            bool result = await productService.DeleteProduct(productId);
-            if (!result)
+            var request = new DeleteProductRequest { ProductId = productId };
+            var response = await _productService.DeleteProduct(request);
+            
+            if (!response.Success)
             {
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Product not found or failed to delete",
-                    Errors = new List<string> { "Product deletion failed" }
+                    Message = response.Message
                 });
             }
 
             return Ok(new ApiResponse<object>
             {
                 Success = true,
-                Message = "Product deleted successfully"
+                Message = response.Message
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<object>
             {
                 Success = false,

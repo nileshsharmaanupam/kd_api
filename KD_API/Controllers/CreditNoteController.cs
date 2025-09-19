@@ -1,10 +1,8 @@
-using KD_API.Models;
 using KD_API.Models.APIRequests.CreditNote;
 using KD_API.Models.APIResponse;
 using KD_API.Models.APIResponse.CreditNote;
 using KD_API.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 
 namespace KD_API.Controllers;
 
@@ -13,12 +11,10 @@ namespace KD_API.Controllers;
 public class CreditNoteController : ControllerBase
 {
     private readonly ICreditNoteService _creditNoteService;
-    private readonly IMapper _mapper;
 
-    public CreditNoteController(ICreditNoteService creditNoteService, IMapper mapper)
+    public CreditNoteController(ICreditNoteService creditNoteService)
     {
         _creditNoteService = creditNoteService;
-        _mapper = mapper;
     }
 
     [HttpGet("{creditNoteId}")]
@@ -26,17 +22,18 @@ public class CreditNoteController : ControllerBase
     {
         try
         {
-            var creditNote = await _creditNoteService.GetCreditNoteById(creditNoteId);
+            var request = new GetCreditNoteByIdRequest { CreditNoteId = creditNoteId };
+            var response = await _creditNoteService.GetCreditNoteById(request);
+            
             return Ok(new ApiResponse<CreditNoteResponse>
             {
                 Success = true,
                 Message = "Credit note retrieved successfully",
-                Data = creditNote
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<CreditNoteResponse>
             {
                 Success = false,
@@ -51,18 +48,18 @@ public class CreditNoteController : ControllerBase
     {
         try
         {
-            var creditNoteListResponse = await _creditNoteService.GetAllCreditNotes();
+            var request = new GetAllCreditNotesRequest();
+            var response = await _creditNoteService.GetAllCreditNotes(request);
             
             return Ok(new ApiResponse<CreditNoteListResponse>
             {
                 Success = true,
                 Message = "Credit notes retrieved successfully",
-                Data = creditNoteListResponse
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<CreditNoteListResponse>
             {
                 Success = false,
@@ -73,33 +70,22 @@ public class CreditNoteController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateCreditNote([FromBody] CreateCreditNote request)
+    public async Task<IActionResult> CreateCreditNote([FromBody] CreateCreditNoteRequest request)
     {
         try
         {
-            var creditNote = _mapper.Map<CreditNoteDTO>(request);
-            bool result = await _creditNoteService.CreateCreditNote(creditNote);
+            var response = await _creditNoteService.CreateCreditNote(request);
             
-            if (!result)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Failed to create credit note",
-                    Errors = new List<string> { "Credit note creation failed" }
-                });
-            }
-
-            return Ok(new ApiResponse<object>
+            return Ok(new ApiResponse<CreditNoteResponse>
             {
                 Success = true,
-                Message = "Credit note created successfully"
+                Message = "Credit note created successfully",
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            return StatusCode(500, new ApiResponse<object>
+            return StatusCode(500, new ApiResponse<CreditNoteResponse>
             {
                 Success = false,
                 Message = "Failed to create credit note",
@@ -109,16 +95,12 @@ public class CreditNoteController : ControllerBase
     }
 
     [HttpPut("{creditNoteId}")]
-    public async Task<IActionResult> UpdateCreditNote(int creditNoteId, [FromBody] UpdateCreditNote request)
+    public async Task<IActionResult> UpdateCreditNote(int creditNoteId, [FromBody] UpdateCreditNoteRequest request)
     {
         try
         {
-            var creditNote = _mapper.Map<CreditNoteDTO>(request);
-            creditNote.Id = creditNoteId;
-            
-            var updatedCreditNote = await _creditNoteService.UpdateCreditNote(creditNoteId, creditNote);
-            var response = _mapper.Map<CreditNoteResponse>(updatedCreditNote);
-            response.UpdatedAt = DateTime.UtcNow;
+            request.CreditNoteId = creditNoteId;
+            var response = await _creditNoteService.UpdateCreditNote(request);
 
             return Ok(new ApiResponse<CreditNoteResponse>
             {
@@ -129,7 +111,6 @@ public class CreditNoteController : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<CreditNoteResponse>
             {
                 Success = false,
@@ -144,26 +125,26 @@ public class CreditNoteController : ControllerBase
     {
         try
         {
-            bool result = await _creditNoteService.DeleteCreditNote(creditNoteId);
-            if (!result)
+            var request = new DeleteCreditNoteRequest { CreditNoteId = creditNoteId };
+            var response = await _creditNoteService.DeleteCreditNote(request);
+            
+            if (!response.Success)
             {
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Credit note not found or failed to delete",
-                    Errors = new List<string> { "Credit note deletion failed" }
+                    Message = response.Message
                 });
             }
 
             return Ok(new ApiResponse<object>
             {
                 Success = true,
-                Message = "Credit note deleted successfully"
+                Message = response.Message
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<object>
             {
                 Success = false,

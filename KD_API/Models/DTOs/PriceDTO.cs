@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KD_API.Models;
 
-// Not going to use for MVP app
 [Table("prices")]
 public class PriceDTO
 {

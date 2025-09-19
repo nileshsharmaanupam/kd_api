@@ -1,12 +1,13 @@
-using KD_API.Models;
+using KD_API.Models.APIRequests.Product;
+using KD_API.Models.APIResponse.Product;
 
 namespace KD_API.Service.Interfaces;
 
 public interface IProductService
 {
-    public Task<ProductDTO> GetProductById(int productId);
-    public Task<IEnumerable<ProductDTO>> GetAllProducts();
-    public Task<bool> CreateProduct(ProductDTO productDto);
-    public Task<ProductDTO> UpdateProduct(int productId, ProductDTO productDto);
-    public Task<bool> DeleteProduct(int productId);
+    public Task<ProductResponse> GetProductById(GetProductByIdRequest request);
+    public Task<ProductListResponse> GetAllProducts(GetAllProductsRequest request);
+    public Task<ProductResponse> CreateProduct(CreateProductRequest request);
+    public Task<ProductResponse> UpdateProduct(UpdateProductRequest request);
+    public Task<DeleteProductResponse> DeleteProduct(DeleteProductRequest request);
 }

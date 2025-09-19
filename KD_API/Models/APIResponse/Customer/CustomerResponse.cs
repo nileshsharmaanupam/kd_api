@@ -23,3 +23,9 @@ public class CustomerListResponse
     public int ActiveCount { get; set; }
     public int InactiveCount { get; set; }
 }
+
+public class DeleteCustomerResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+}

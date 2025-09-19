@@ -1,6 +1,16 @@
 namespace KD_API.Models.APIRequests.Cattle;
 
-public class CreateCattle
+public class GetCattleByIdRequest
+{
+    public int CattleId { get; set; }
+}
+
+public class GetAllCattleRequest
+{
+    // Can add filtering/pagination parameters if needed
+}
+
+public class CreateCattleRequest
 {
     public string Name { get; set; }
     public string Breed { get; set; }
@@ -15,8 +25,9 @@ public class CreateCattle
     public bool? isLactating { get; set; }
 }
 
-public class UpdateCattle
+public class UpdateCattleRequest
 {
+    public int CattleId { get; set; }
     public string Name { get; set; }
     public string Breed { get; set; }
     public DateTime? BirthDate { get; set; }
@@ -30,3 +41,12 @@ public class UpdateCattle
     public bool? IsLactating { get; set; }
     public bool IsActive { get; set; }
 }
+
+public class DeleteCattleRequest
+{
+    public int CattleId { get; set; }
+}
+
+// Legacy classes for backward compatibility
+public class CreateCattle : CreateCattleRequest { }
+public class UpdateCattle : UpdateCattleRequest { }

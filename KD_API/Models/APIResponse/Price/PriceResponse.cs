@@ -29,3 +29,9 @@ public class PriceListResponse
     public Dictionary<string, decimal> AveragePriceByType { get; set; }
     public Dictionary<string, int> PriceCountByType { get; set; }
 }
+
+public class DeletePriceResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+}

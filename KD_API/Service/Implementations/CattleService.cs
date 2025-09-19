@@ -1,10 +1,10 @@
+using AutoMapper;
 using KD_API.DbContexts;
 using KD_API.Models;
+using KD_API.Models.APIRequests.Cattle;
 using KD_API.Models.APIResponse.Cattle;
 using KD_API.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using AutoMapper;
-using KD_API.Models.APIRequests.Cattle;
 
 namespace KD_API.Service.Implementations;
 
@@ -19,68 +19,79 @@ public class CattleService : ICattleService
         _mapper = mapper;
     }
 
-    public async Task<CattleResponse> GetCattleById(int cattleId)
+    public async Task<CattleResponse> GetCattleById(GetCattleByIdRequest request)
     {
-        var cattle = await _context.Cattle.FindAsync(cattleId);
+        var cattle = await _context.Cattle.FindAsync(request.CattleId);
         if (cattle == null)
         {
-            throw new ArgumentException($"Cattle with ID {cattleId} not found.");
+            throw new ArgumentException($"Cattle with ID {request.CattleId} not found.");
         }
         
-        return _mapper.Map<CattleResponse>(cattle);
-    }
-
-    public async Task<CattleListResponse> GetAllCattle()
-    {
-        var cattleList = await _context.Cattle.ToListAsync();
-        return _mapper.Map<CattleListResponse>(cattleList);
-    }
-
-    public async Task<bool> CreateCattle(CreateCattle createCattle)
-    {
-        try
-        {
-            CattleDTO cattleDto = _mapper.Map<CattleDTO>(createCattle);
-            _context.Cattle.Add(cattleDto);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<CattleResponse> UpdateCattle(int cattleId, UpdateCattle updateCattle)
-    {
-        CattleDTO? existingCattle = await _context.Cattle.FindAsync(cattleId);
-        if (existingCattle == null)
-        {
-            throw new ArgumentException($"Cattle with ID {cattleId} not found.");
-        }
-        _mapper.Map(updateCattle, existingCattle);
-        await _context.SaveChangesAsync();
-        CattleResponse response = _mapper.Map<CattleResponse>(existingCattle);
+        var response = _mapper.Map<CattleResponse>(cattle);
         return response;
     }
 
-    public async Task<bool> DeleteCattle(int cattleId)
+    public async Task<CattleListResponse> GetAllCattle(GetAllCattleRequest request)
+    {
+        var cattle = await _context.Cattle.ToListAsync();
+        return _mapper.Map<CattleListResponse>(cattle);
+    }
+
+    public async Task<CattleResponse> CreateCattle(CreateCattleRequest request)
+    {
+        var cattle = _mapper.Map<CattleDTO>(request);
+        _context.Cattle.Add(cattle);
+        await _context.SaveChangesAsync();
+        
+        var response = _mapper.Map<CattleResponse>(cattle);
+        return response;
+    }
+
+    public async Task<CattleResponse> UpdateCattle(UpdateCattleRequest request)
+    {
+        var existingCattle = await _context.Cattle.FindAsync(request.CattleId);
+        if (existingCattle == null)
+        {
+            throw new ArgumentException($"Cattle with ID {request.CattleId} not found.");
+        }
+        
+        _mapper.Map(request, existingCattle);
+        await _context.SaveChangesAsync();
+        
+        var response = _mapper.Map<CattleResponse>(existingCattle);
+        return response;
+    }
+
+    public async Task<DeleteCattleResponse> DeleteCattle(DeleteCattleRequest request)
     {
         try
         {
-            var cattle = await _context.Cattle.FindAsync(cattleId);
+            var cattle = await _context.Cattle.FindAsync(request.CattleId);
             if (cattle == null)
             {
-                return false;
+                return new DeleteCattleResponse 
+                { 
+                    Success = false, 
+                    Message = $"Cattle with ID {request.CattleId} not found." 
+                };
             }
-            
+
             _context.Cattle.Remove(cattle);
             await _context.SaveChangesAsync();
-            return true;
+            
+            return new DeleteCattleResponse 
+            { 
+                Success = true, 
+                Message = "Cattle deleted successfully." 
+            };
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return new DeleteCattleResponse 
+            { 
+                Success = false, 
+                Message = $"Error deleting Cattle: {ex.Message}" 
+            };
         }
     }
 }

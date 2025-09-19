@@ -22,3 +22,9 @@ public class ProductListResponse
     public int InactiveCount { get; set; }
     public decimal AveragePrice { get; set; }
 }
+
+public class DeleteProductResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+}

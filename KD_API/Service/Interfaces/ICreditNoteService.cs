@@ -1,13 +1,14 @@
 using KD_API.Models;
+using KD_API.Models.APIRequests.CreditNote;
 using KD_API.Models.APIResponse.CreditNote;
 
 namespace KD_API.Service.Interfaces;
 
 public interface ICreditNoteService
 {
-    public Task<CreditNoteResponse> GetCreditNoteById(int creditNoteId);
-    public Task<CreditNoteListResponse> GetAllCreditNotes();
-    public Task<bool> CreateCreditNote(CreditNoteDTO creditNoteDto);
-    public Task<CreditNoteDTO> UpdateCreditNote(int creditNoteId, CreditNoteDTO creditNoteDto);
-    public Task<bool> DeleteCreditNote(int creditNoteId);
+    public Task<CreditNoteResponse> GetCreditNoteById(GetCreditNoteByIdRequest request);
+    public Task<CreditNoteListResponse> GetAllCreditNotes(GetAllCreditNotesRequest request);
+    public Task<CreditNoteResponse> CreateCreditNote(CreateCreditNoteRequest request);
+    public Task<CreditNoteResponse> UpdateCreditNote(UpdateCreditNoteRequest request);
+    public Task<DeleteCreditNoteResponse> DeleteCreditNote(DeleteCreditNoteRequest request);
 }

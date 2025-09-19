@@ -31,3 +31,9 @@ public class CreditNoteListResponse
     public Dictionary<string, int> StatusCounts { get; set; }
     public int OverdueCount { get; set; }
 }
+
+public class DeleteCreditNoteResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+}

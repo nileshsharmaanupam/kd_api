@@ -1,4 +1,3 @@
-using KD_API.Models;
 using KD_API.Models.APIRequests.Expense;
 using KD_API.Models.APIResponse;
 using KD_API.Models.APIResponse.Expense;
@@ -9,24 +8,23 @@ namespace KD_API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ExpenseController(IExpenseService expenseService) : ControllerBase
+public class ExpenseController : ControllerBase
 {
+    private readonly IExpenseService _expenseService;
+
+    public ExpenseController(IExpenseService expenseService)
+    {
+        _expenseService = expenseService;
+    }
+
     [HttpGet("{expenseId}")]
     public async Task<IActionResult> GetExpenseById(int expenseId)
     {
         try
         {
-            var expense = await expenseService.GetExpenseById(expenseId);
-            var response = new ExpenseResponse
-            {
-                Id = expense.Id,
-                Note = expense.Note,
-                Amount = expense.Amount,
-                Tag = expense.Tag,
-                ExpenseDate = expense.ExpenseDate,
-                CreatedAt = DateTime.UtcNow
-            };
-
+            var request = new GetExpenseByIdRequest { ExpenseId = expenseId };
+            var response = await _expenseService.GetExpenseById(request);
+            
             return Ok(new ApiResponse<ExpenseResponse>
             {
                 Success = true,
@@ -36,7 +34,6 @@ public class ExpenseController(IExpenseService expenseService) : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<ExpenseResponse>
             {
                 Success = false,
@@ -51,39 +48,18 @@ public class ExpenseController(IExpenseService expenseService) : ControllerBase
     {
         try
         {
-            var expenses = await expenseService.GetAllExpenses();
-            var expenseResponses = expenses.Select(e => new ExpenseResponse
-            {
-                Id = e.Id,
-                Note = e.Note,
-                Amount = e.Amount,
-                Tag = e.Tag,
-                ExpenseDate = e.ExpenseDate,
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
-
-            var listResponse = new ExpenseListResponse
-            {
-                Expenses = expenseResponses,
-                TotalCount = expenseResponses.Count,
-                TotalAmount = expenseResponses.Sum(e => e.Amount),
-                AverageExpenseAmount = expenseResponses.Any() ? expenseResponses.Average(e => e.Amount) : 0,
-                ExpensesByTag = expenseResponses.GroupBy(e => e.Tag?.ToString() ?? "No Tag")
-                    .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount)),
-                ExpenseCountByTag = expenseResponses.GroupBy(e => e.Tag?.ToString() ?? "No Tag")
-                    .ToDictionary(g => g.Key, g => g.Count())
-            };
-
+            var request = new GetAllExpensesRequest();
+            var response = await _expenseService.GetAllExpenses(request);
+            
             return Ok(new ApiResponse<ExpenseListResponse>
             {
                 Success = true,
                 Message = "Expenses retrieved successfully",
-                Data = listResponse
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<ExpenseListResponse>
             {
                 Success = false,
@@ -94,39 +70,22 @@ public class ExpenseController(IExpenseService expenseService) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateExpense([FromBody] CreateExpense request)
+    public async Task<IActionResult> CreateExpense([FromBody] CreateExpenseRequest request)
     {
         try
         {
-            var expense = new Expense
-            {
-                Note = request.Note,
-                Amount = request.Amount,
-                Tag = request.Tag,
-                ExpenseDate = request.ExpenseDate
-            };
-
-            bool result = await expenseService.CreateExpense(expense);
-            if (!result)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Failed to create expense",
-                    Errors = new List<string> { "Expense creation failed" }
-                });
-            }
-
-            return Ok(new ApiResponse<object>
+            var response = await _expenseService.CreateExpense(request);
+            
+            return Ok(new ApiResponse<ExpenseResponse>
             {
                 Success = true,
-                Message = "Expense created successfully"
+                Message = "Expense created successfully",
+                Data = response
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            return StatusCode(500, new ApiResponse<object>
+            return StatusCode(500, new ApiResponse<ExpenseResponse>
             {
                 Success = false,
                 Message = "Failed to create expense",
@@ -136,30 +95,12 @@ public class ExpenseController(IExpenseService expenseService) : ControllerBase
     }
 
     [HttpPut("{expenseId}")]
-    public async Task<IActionResult> UpdateExpense(int expenseId, [FromBody] UpdateExpense request)
+    public async Task<IActionResult> UpdateExpense(int expenseId, [FromBody] UpdateExpenseRequest request)
     {
         try
         {
-            var expense = new Expense
-            {
-                Id = expenseId,
-                Note = request.Note,
-                Amount = request.Amount,
-                Tag = request.Tag,
-                ExpenseDate = request.ExpenseDate
-            };
-
-            var updatedExpense = await expenseService.UpdateExpense(expenseId, expense);
-            var response = new ExpenseResponse
-            {
-                Id = updatedExpense.Id,
-                Note = updatedExpense.Note,
-                Amount = updatedExpense.Amount,
-                Tag = updatedExpense.Tag,
-                ExpenseDate = updatedExpense.ExpenseDate,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            request.ExpenseId = expenseId;
+            var response = await _expenseService.UpdateExpense(request);
 
             return Ok(new ApiResponse<ExpenseResponse>
             {
@@ -170,7 +111,6 @@ public class ExpenseController(IExpenseService expenseService) : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<ExpenseResponse>
             {
                 Success = false,
@@ -185,26 +125,26 @@ public class ExpenseController(IExpenseService expenseService) : ControllerBase
     {
         try
         {
-            bool result = await expenseService.DeleteExpense(expenseId);
-            if (!result)
+            var request = new DeleteExpenseRequest { ExpenseId = expenseId };
+            var response = await _expenseService.DeleteExpense(request);
+            
+            if (!response.Success)
             {
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Expense not found or failed to delete",
-                    Errors = new List<string> { "Expense deletion failed" }
+                    Message = response.Message
                 });
             }
 
             return Ok(new ApiResponse<object>
             {
                 Success = true,
-                Message = "Expense deleted successfully"
+                Message = response.Message
             });
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
             return StatusCode(500, new ApiResponse<object>
             {
                 Success = false,

@@ -26,3 +26,9 @@ public class TransactionListResponse
     public decimal AverageTransactionAmount { get; set; }
     public Dictionary<string, int> StatusCounts { get; set; }
 }
+
+public class DeleteTransactionResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+}

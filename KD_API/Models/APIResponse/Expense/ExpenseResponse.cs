@@ -7,7 +7,7 @@ public class ExpenseResponse
     public int Id { get; set; }
     public string Note { get; set; }
     public decimal Amount { get; set; }
-    public ExpenseTag? Tag { get; set; }
+    public ExpenseTagDTO? Tag { get; set; }
     public DateTime ExpenseDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -21,4 +21,10 @@ public class ExpenseListResponse
     public decimal AverageExpenseAmount { get; set; }
     public Dictionary<string, decimal> ExpensesByTag { get; set; }
     public Dictionary<string, int> ExpenseCountByTag { get; set; }
+}
+
+public class DeleteExpenseResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
 }
