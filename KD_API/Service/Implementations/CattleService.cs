@@ -39,7 +39,7 @@ public class CattleService : ICattleService
 
     public async Task<CattleResponse> CreateCattle(CreateCattleRequest request)
     {
-        var cattle = _mapper.Map<CattleDTO>(request);
+        CattleDTO cattle = _mapper.Map<CattleDTO>(request);
         _context.Cattle.Add(cattle);
         await _context.SaveChangesAsync();
         

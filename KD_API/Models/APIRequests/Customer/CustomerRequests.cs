@@ -18,7 +18,6 @@ public class CreateCustomerRequest
     public string? Address { get; set; }
     public string? Discription { get; set; }
     public DateTime? JoinDate { get; set; }
-    public bool IsActive { get; set; }
 }
 
 public class UpdateCustomerRequest
@@ -37,7 +36,3 @@ public class DeleteCustomerRequest
 {
     public int CustomerId { get; set; }
 }
-
-// Legacy classes for backward compatibility
-public class CreateCustomer : CreateCustomerRequest { }
-public class UpdateCustomer : UpdateCustomerRequest { }

@@ -7,6 +7,8 @@ public class PostgresDbContext : DbContext
     public PostgresDbContext(DbContextOptions<PostgresDbContext> options) : base(options)
     {
         base.Database.EnsureCreated();
+        // Removed base.Database.EnsureCreated() from constructor
+        // Database creation is now handled in Program.cs during startup
     }
     
     public DbSet<CattleDTO> Cattle { get; set; }
